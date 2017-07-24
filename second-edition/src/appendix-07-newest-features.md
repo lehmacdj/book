@@ -57,3 +57,45 @@ fn main() {
     assert_eq!(result, 20);
 }
 ```
+
+## Unions
+
+Unions provide a means of interpreting the same bits in different ways.
+Currently only types implementing `Copy` and not `Drop` can be used in an
+`union`.
+
+```rust
+union MyUnion {
+    float: f32,
+    int: u32,
+}
+```
+
+The fields of a `union` allow you to interpret the data as one specific type
+even if it isn't the same one it was set as. As a result, reading and writing
+from `union` fields is unsafe:
+
+```rust
+let u = MyUnion { int: 10 };
+
+unsafe { u.float = 3.14 };
+
+let value = unsafe { u.int };
+```
+
+Pattern matching can also be used. This allows only matching against a specific
+variant if the value for that field matches a specific value:
+
+```rust
+fn f(u: MyUnion) {
+    unsafe {
+        match u {
+            MyUnion { int: 10 } => { println!("ten"); }
+            MyUnion { float: f } => { println!("{}", f); }
+        }
+    }
+}
+```
+
+Unions are useful for interfacing with C APIs that expose unions and for cases
+where manual casting would be too error prone otherwise.
