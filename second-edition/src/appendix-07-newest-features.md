@@ -60,42 +60,34 @@ fn main() {
 
 ## Unions
 
-Unions provide a means of interpreting the same bits in different ways.
-Currently only types implementing `Copy` and not `Drop` can be used in an
-`union`.
+Unions provide a means of interpreting the same underlying bits with different
+types without type casts. Right now only types implementing `Copy`
+(and not `Drop`) can be fields in a `union`. Accessing a field of a `union`
+interprets the value stored in the union as having the specified
+type. Writing to a field puts a value there such that reading it later from the
+same field will have the same value. You can also pattern match on `union`s.
+Unless constants restrict the pattern to match only in certain cases, the match
+statement will match any fields from the union.
 
 ```rust
 union MyUnion {
     float: f32,
     int: u32,
 }
-```
 
-The fields of a `union` allow you to interpret the data as one specific type
-even if it isn't the same one it was set as. As a result, reading and writing
-from `union` fields is unsafe:
+fn main() {
+    let mut u = MyUnion { int: 10 };
+    let value1 = unsafe { u.int };
+    assert_eq!(10, value1);
 
-```rust
-let u = MyUnion { int: 10 };
+    u.float = 3.14;
 
-unsafe { u.float = 3.14 };
-
-let value = unsafe { u.int };
-```
-
-Pattern matching can also be used. This allows only matching against a specific
-variant if the value for that field matches a specific value:
-
-```rust
-fn f(u: MyUnion) {
+    // prints "3.14"
     unsafe {
         match u {
             MyUnion { int: 10 } => { println!("ten"); }
             MyUnion { float: f } => { println!("{}", f); }
         }
-    }
+    };
 }
 ```
-
-Unions are useful for interfacing with C APIs that expose unions and for cases
-where manual casting would be too error prone otherwise.
